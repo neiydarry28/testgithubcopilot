@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GH-300 Quest - Certificación GitHub Copilot</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vanta/0.5.24/vanta.clouds.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #2d3748;
+            --secondary-color: #4a5568;
+            --accent-color: #38a169;
+            --danger-color: #e53e3e;
+            --warning-color: #d69e2e;
+            --bg-primary: #0f1419;
+            --bg-secondary: #1a202c;
+            --bg-card: #2d3748;
+            --text-primary: #f7fafc;
+            --text-secondary: #cbd5e0;
+            --border-color: #4a5568;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .bg-animated {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        .glass-card {
+            background: rgba(45, 55, 72, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(74, 85, 104, 0.3);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, var(--accent-color), #48bb78);
+            height: 8px;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .question-card {
+            transition: all 0.3s ease;
+            transform: translateY(0);
+        }
+
+        .question-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(56, 161, 105, 0.2);
+        }
+
+        .option-button {
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+        }
+
+        .option-button:hover {
+            border-color: var(--accent-color);
+            background: rgba(56, 161, 105, 0.1);
+            transform: translateX(8px);
+        }
+
+        .option-button.selected {
+            border-color: var(--accent-color);
+            background: rgba(56, 161, 105, 0.2);
+        }
+
+        .option-button.correct {
+            border-color: var(--accent-color);
+            background: rgba(56, 161, 105, 0.3);
+            animation: correctPulse 0.6s ease;
+        }
+
+        .option-button.incorrect {
+            border-color: var(--danger-color);
+            background: rgba(229, 62, 62, 0.2);
+            animation: incorrectShake 0.6s ease;
+        }
+
+        @keyframes correctPulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.02);
+            }
+        }
+
+        @keyframes incorrectShake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-8px);
+            }
+
+            75% {
+                transform: translateX(8px);
+            }
+        }
+
+        .score-display {
+            background: linear-gradient(135deg, var(--accent-color), #48bb78);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 800;
+        }
+
+        .floating-icon {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .api-response {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .loading-spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid var(--accent-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .domain-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin: 4px;
+        }
+
+        .domain-1 {
+            background: rgba(255, 99, 132, 0.2);
+            color: #ff6384;
+        }
+
+        .domain-2 {
+            background: rgba(54, 162, 235, 0.2);
+            color: #36a2eb;
+        }
+
+        .domain-3 {
+            background: rgba(255, 205, 86, 0.2);
+            color: #ffcd56;
+        }
+
+        .domain-4 {
+            background: rgba(75, 192, 192, 0.2);
+            color: #4bc0c0;
+        }
+
+        .domain-5 {
+            background: rgba(153, 102, 255, 0.2);
+            color: #9966ff;
+        }
+
+        .domain-6 {
+            background: rgba(255, 159, 64, 0.2);
+            color: #ff9f40;
+        }
+
+        .domain-7 {
+            background: rgba(199, 199, 199, 0.2);
+            color: #c7c7c7;
+        }
+
+        .explanation-card {
+            background: rgba(74, 85, 104, 0.3);
+            border-left: 4px solid var(--accent-color);
+            padding: 16px;
+            margin-top: 16px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .explanation-card.show {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-color), #48bb78);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(56, 161, 105, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="vanta-bg" class="bg-animated"></div>
+
+    <!-- Header -->
+    <header class="relative z-10 p-6">
+        <div class="max-w-6xl mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <div class="floating-icon">
+                    <img src="github-copilot.svg" alt="GitHub Copilot Logo" class="h-10 w-10">
+                </div>
+                <div>
+                    <h1 class="text-3xl font-bold">GH-300 Test</h1>
+                    <p class="text-gray-400">Certificación GitHub Copilot por <a
+                            href="https://www.linkedin.com/in/neiybriceno/" target="_blank" rel="noopener noreferrer"
+                            class="text-accent-color hover:underline">Neiy Briceño💪</a></p>
+                </div>
+            </div>
+            <div class="text-right">
+                <div class="score-display text-2xl" id="score-display">0/39</div>
+                <p class="text-gray-400 text-sm">Pregunta <span id="current-question">1</span> de 39</p>
+            </div>
+        </div>
+    </header>
+
+    <!-- Progress Bar -->
+    <div class="relative z-10 px-6 mb-8">
+        <div class="max-w-6xl mx-auto">
+            <div class="bg-gray-700 rounded-full h-2">
+                <div class="progress-bar" id="progress-bar" style="width: 0%"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="relative z-10 px-6 pb-12">
+        <div class="max-w-4xl mx-auto">
+
+            <!-- Welcome Screen -->
+            <div id="welcome-screen" class="glass-card p-8 text-center">
+                <div class="mb-8">
+                    <img src="github-copilot.svg" alt="GitHub Copilot Logo" class="h-16 w-16 mx-auto mb-4">
+                    <h2 class="text-4xl font-bold mb-4">¡Bienvenido a GH-300 Quest!</h2>
+                    <p class="text-xl text-gray-300 mb-6">
+                        Prepárate para la certificación de GitHub Copilot con este juego interactivo.
+                        Demuestra tu conocimiento y obtén recomendaciones personalizadas de estudio.
+                    </p>
+                </div>
+
+                <div class="grid md:grid-cols-3 gap-6 mb-8">
+                    <div class="text-center">
+                        <i class="fas fa-brain text-3xl text-purple-400 mb-3"></i>
+                        <h3 class="font-semibold mb-2">IA Responsable</h3>
+                        <p class="text-sm text-gray-400">Principios éticos y equidad</p>
+                    </div>
+                    <div class="text-center">
+                        <i class="fas fa-code text-3xl text-blue-400 mb-3"></i>
+                        <h3 class="font-semibold mb-2">GitHub Copilot</h3>
+                        <p class="text-sm text-gray-400">Planes, características y uso</p>
+                    </div>
+                    <div class="text-center">
+                        <i class="fas fa-shield-alt text-3xl text-green-400 mb-3"></i>
+                        <h3 class="font-semibold mb-2">Seguridad y Privacidad</h3>
+                        <p class="text-sm text-gray-400">Protección de datos y contexto</p>
+                    </div>
+                </div>
+
+                <button class="btn-primary text-lg px-8 py-4" onclick="startQuiz()">
+                    <i class="fas fa-play mr-2"></i>
+                    Comenzar Aventura
+                </button>
+            </div>
+
+            <!-- Quiz Screen -->
+            <div id="quiz-screen" class="hidden">
+                <div id="question-container" class="glass-card p-8 mb-6">
+                    <!-- Question content will be inserted here -->
+                </div>
+
+                <div class="flex justify-between items-center">
+                    <button id="prev-btn" class="btn-primary" onclick="previousQuestion()" disabled>
+                        <i class="fas fa-arrow-left mr-2"></i>
+                        Anterior
+                    </button>
+
+                    <div class="flex space-x-4">
+                        <button id="hint-btn" class="btn-primary" onclick="showHint()">
+                            <i class="fas fa-lightbulb mr-2"></i>
+                            Pista
+                        </button>
+                        <button id="next-btn" class="btn-primary" onclick="nextQuestion()">
+                            Siguiente
+                            <i class="fas fa-arrow-right ml-2"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Screen -->
+            <div id="results-screen" class="hidden">
+                <div class="glass-card p-8 text-center mb-6">
+                    <i class="fas fa-medal text-6xl text-yellow-400 mb-4"></i>
+                    <h2 class="text-4xl font-bold mb-4">¡Cuestionario Completado!</h2>
+
+                    <div class="grid md:grid-cols-3 gap-6 mb-8">
+                        <div class="glass-card p-6">
+                            <div class="text-3xl font-bold text-green-400" id="correct-count">0</div>
+                            <p class="text-gray-400">Respuestas Correctas</p>
+                        </div>
+                        <div class="glass-card p-6">
+                            <div class="text-3xl font-bold text-red-400" id="incorrect-count">0</div>
+                            <p class="text-gray-400">Respuestas Incorrectas</p>
+                        </div>
+                        <div class="glass-card p-6">
+                            <div class="text-3xl font-bold text-blue-400" id="percentage-score">0%</div>
+                            <p class="text-gray-400">Porcentaje Final</p>
+                        </div>
+                    </div>
+
+                    <div id="domain-results" class="mb-8">
+                        <!-- Domain breakdown will be inserted here -->
+                    </div>
+
+                    <button class="btn-primary text-lg px-8 py-4" onclick="getRecommendations()">
+                        <i class="fas fa-magic mr-2"></i>
+                        Obtener Recomendaciones de Estudio
+                    </button>
+                </div>
+
+                <!-- API Response Section -->
+                <div id="api-response-container" class="hidden">
+                    <div class="api-response">
+                        <h3 class="text-2xl font-bold mb-4">
+                            <i class="fas fa-graduation-cap mr-2"></i>
+                            Recomendaciones Personalizadas
+                        </h3>
+                        <div id="api-response-content">
+                            <div class="loading-spinner mx-auto mb-4"></div>
+                            <p class="text-center">Analizando tus resultados y generando recomendaciones...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="quiz-data.js"></script>
+    <script src="main.js"></script>
+</body>
+
+</html>
